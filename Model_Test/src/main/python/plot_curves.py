@@ -2,18 +2,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 MINS_PER_DAY = 1440
-MIN_INTERVALS = 5
 
-def plot_io_curves(io_series, filepath):
-    indices = np.arange(0, MINS_PER_DAY, MIN_INTERVALS)
+def plot_io_curves(io_series, filepath, min_intervals):
+    indices = np.arange(0, MINS_PER_DAY, min_intervals)
     for (input_series, output_series) in io_series:
         plt.plot(indices, input_series)
         plt.plot(indices, output_series)
     plt.savefig(filepath)
     plt.close()
 
-def plot_demand_congestion(demands, congestion, filepath, congestion_spillover = None):
-    indices = np.arange(0, MINS_PER_DAY - MIN_INTERVALS, MIN_INTERVALS)
+def plot_demand_congestion(demands, congestion, filepath, congestion_spillover = None, min_intervals = 5):
+    indices = np.arange(0, MINS_PER_DAY - min_intervals, min_intervals)
     fig, ax1 = plt.subplots()
     ax2 = ax1.twinx()
     if congestion_spillover is not None:

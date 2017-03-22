@@ -7,13 +7,13 @@ from calculate_link_demand_and_congestion import get_link_congestion, get_link_d
 from plot_curves import plot_io_curves, plot_demand_congestion
 
 MINS_PER_DAY = 1440
-MIN_INTERVALS = 5
-NUM_BINS = MINS_PER_DAY / MIN_INTERVALS
 
 class Parameters():
 
     # Scenario 1 Parameters
 
+    min_intervals = 5
+    num_bins = MINS_PER_DAY / min_intervals
     num_zones = 4
     demand_start_times = [0, 480, 960]
     demand_end_times = [240, 720, 1200]
@@ -27,6 +27,7 @@ class Parameters():
     freeway_links_fftt=[100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100]
     freeway_links_jam_density = [100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100]
     freeway_links_length = [100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100]
+    congestion_nn_smoothening_number = [10,10,10,10]
     check_route_choice = False
     plot_congestion_io_curves = True
     plot_demand_congestion_curves = True
@@ -39,17 +40,24 @@ def run(parameters):
     od_demand_funcs = generate_initial_demand(num_zones=parameters.num_zones, start_times=parameters.demand_start_times,
                                               end_times=parameters.demand_end_times, slopes=parameters.demand_slopes)
     congestion_links_input_curve_from_zone = get_congestion_links_input_curve_from_demand(num_zones=parameters.num_zones,
-                                                                                      od_demand_funcs=od_demand_funcs)
+                                                                                      od_demand_funcs=od_demand_funcs,
+                                                                                min_intervals=parameters.min_intervals)
     congestion_links_output_curve_from_zone = get_links_output_curve(links_input_curve=
                                                                  congestion_links_input_curve_from_zone,
                                                                  links_capacity=parameters.congestion_links_capacity,
-                                                                 links_fftt=parameters.congestion_links_fftt)
+                                                                 links_fftt=parameters.congestion_links_fftt,
+                                                                 min_intervals=parameters.min_intervals,
+                                                                 num_bins=parameters.num_bins)
     freeway_links_input_curve = get_freeway_links_input_curve_after_diverging(congestion_links_output_curve=
                                                                           congestion_links_output_curve_from_zone,
-                                                                          num_zones=parameters.num_zones)
+                                                                          num_zones=parameters.num_zones,
+                                                                          min_intervals=parameters.min_intervals,
+                                                                          num_bins=parameters.num_bins)
     freeway_links_output_curve = get_links_output_curve(links_input_curve=freeway_links_input_curve,
                                                     links_capacity=parameters.freeway_links_capacity,
-                                                    links_fftt=parameters.freeway_links_fftt)
+                                                    links_fftt=parameters.freeway_links_fftt,
+                                                    min_intervals=parameters.min_intervals,
+                                                    num_bins=parameters.num_bins)
     if parameters.check_route_choice:
         best_route_input_curve = freeway_links_input_curve[parameters.num_zones - 1]
         best_route_output_curve = freeway_links_output_curve[parameters.num_zones - 1]
@@ -64,7 +72,8 @@ def run(parameters):
         check_route_choice(best_route_input_curve=best_route_input_curve, best_route_output_curve=best_route_output_curve,
                            alternate_route=alternate_route,best_route_fftt=best_route_fftt,
                            best_route_bottleneck_capacity=best_route_bottleneck_capacity,
-                           alternate_route_fftts=alternative_route_fftts)
+                           alternate_route_fftts=alternative_route_fftts,
+                           min_intervals=parameters.min_intervals, num_bins=parameters.num_bins)
 
     if parameters.plot_route_choice_io_curves:
         io_series = [
@@ -75,14 +84,18 @@ def run(parameters):
             (freeway_links_input_curve.as_matrix()[:, parameters.num_zones * (parameters.num_zones - 1) - 1],
              freeway_links_output_curve.as_matrix()[:, parameters.num_zones * (parameters.num_zones - 1) - 1])
         ]
-        plot_io_curves(io_series=io_series, filepath=parameters.file_directory + '/io_curve_route_choice_links.png')
+        plot_io_curves(io_series=io_series, filepath=parameters.file_directory + '/sample_plots/io_curve_route_choice_links.png',
+                       min_intervals=parameters.min_intervals)
 
     congestion_links_input_curve_to_zone = get_congestion_links_input_curve_after_merging(freeway_links_output_curve=
                                                                                       freeway_links_output_curve,
-                                                                                      num_zones=parameters.num_zones)
+                                                                                      num_zones=parameters.num_zones,
+                                                                                min_intervals=parameters.min_intervals)
     congestion_links_output_curve_to_zone = get_links_output_curve(links_input_curve=congestion_links_input_curve_to_zone,
                                                                links_capacity=parameters.congestion_links_capacity,
-                                                               links_fftt=parameters.congestion_links_fftt)
+                                                               links_fftt=parameters.congestion_links_fftt,
+                                                               min_intervals=parameters.min_intervals,
+                                                               num_bins=parameters.num_bins)
 
     if parameters.check_queue_spillover:
         check_queue_spillover(links_input_curve=congestion_links_input_curve_to_zone,
@@ -90,8 +103,10 @@ def run(parameters):
                               fftts=parameters.congestion_links_fftt,
                               links_capacity=parameters.congestion_links_capacity,
                               links_jam_density=parameters.congestion_links_jam_density,
-                              links_length=parameters.congestion_links_length)
-        for i in range(NUM_BINS):
+                              links_length=parameters.congestion_links_length,
+                              min_intervals=parameters.min_intervals,
+                              num_bins=parameters.num_bins)
+        for i in range(parameters.num_bins):
             freeway_links_output_curve[parameters.num_zones - 1].iloc[i] = min(freeway_links_output_curve[parameters.num_zones - 1].iloc[i],
                                                                     congestion_links_input_curve_to_zone[parameters.num_zones - 1].iloc[i])
         spillover_freeway_link_indices = [(parameters.num_zones * (parameters.num_zones - 1) + k) for k in range(1, parameters.num_zones)]
@@ -103,26 +118,33 @@ def run(parameters):
                             fftts=parameters.freeway_links_fftt[:parameters.num_zones],
                             links_capacity= parameters.freeway_links_capacity[:parameters.num_zones],
                             links_jam_density=parameters.freeway_links_jam_density[:parameters.num_zones],
-                            links_length=parameters.freeway_links_length[:parameters.num_zones])
-        for i in range(NUM_BINS):
+                            links_length=parameters.freeway_links_length[:parameters.num_zones],
+                            min_intervals=parameters.min_intervals, num_bins=parameters.num_bins)
+        for i in range(parameters.num_bins):
             freeway_links_input_curve[parameters.num_zones - 1].iloc[i] = \
                 spillover_freeway_links_input_curves[parameters.num_zones - 1].iloc[i]
             congestion_links_output_curve_from_zone[0].iloc[i] = \
                 spillover_freeway_links_input_curves[parameters.num_zones - 1].iloc[i]
         congestion_spillover = get_link_congestion(link_input_curve=congestion_links_input_curve_from_zone[0],
                                                    link_output_curve=congestion_links_output_curve_from_zone[0],
-                                            threshold_output_for_congestion=parameters.threshold_output_for_congestion[0])
+                                            threshold_output_for_congestion=parameters.threshold_output_for_congestion[0],
+                                            congestion_nn_smoothening_number=parameters.congestion_nn_smoothening_number[0],
+                                                   min_intervals=parameters.min_intervals, num_bins=parameters.num_bins)
 
     congestion_values = get_link_congestion(link_input_curve=congestion_links_input_curve_to_zone[parameters.num_zones - 1],
                                         link_output_curve=congestion_links_output_curve_to_zone[parameters.num_zones - 1],
-                    threshold_output_for_congestion=parameters.threshold_output_for_congestion[parameters.num_zones - 1])
-    link_demands = [get_link_demand(link_input_curve=congestion_links_input_curve_from_zone[i])
+                    threshold_output_for_congestion=parameters.threshold_output_for_congestion[parameters.num_zones - 1],
+                    congestion_nn_smoothening_number=parameters.congestion_nn_smoothening_number[parameters.num_zones - 1],
+                                                    min_intervals=parameters.min_intervals, num_bins=parameters.num_bins)
+    link_demands = [get_link_demand(link_input_curve=congestion_links_input_curve_from_zone[i],
+                                    num_bins=parameters.num_bins)
                 for i in range(parameters.num_zones - 1)]
     io_series = [
     (congestion_links_input_curve_to_zone.as_matrix()[:, parameters.num_zones - 1],
      congestion_links_output_curve_to_zone.as_matrix()[:, parameters.num_zones - 1])]
     if parameters.plot_congestion_io_curves:
-        plot_io_curves(io_series=io_series, filepath=parameters.file_directory+'/sample_plots/io_curve_congestion_zone_link.png')
+        plot_io_curves(io_series=io_series, filepath=parameters.file_directory+'/sample_plots/io_curve_congestion_zone_link.png',
+                       min_intervals=parameters.min_intervals)
     if parameters.plot_demand_congestion_curves:
         plot_demand_congestion(demands=link_demands, congestion=congestion_values,
                        filepath=parameters.file_directory+'/sample_plots/demand_congestion_plot.png')
