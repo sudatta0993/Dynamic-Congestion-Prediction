@@ -10,31 +10,33 @@ MINS_PER_DAY = 1440
 
 class Parameters():
 
-    # Scenario 1 Parameters
-
-    min_intervals = 5
-    num_bins = MINS_PER_DAY / min_intervals
-    num_zones = 4
-    demand_start_times = [0, 480, 960]
-    demand_end_times = [240, 720, 1200]
-    demand_slopes=[0.1,0.1,0.1]
-    congestion_links_capacity=[10,10,10,5]
-    threshold_output_for_congestion = [1,1,1,1]
-    congestion_links_fftt=[20,20,20,20]
-    congestion_links_jam_density = [100,100,100,100]
-    congestion_links_length = [100,100,100,100]
-    freeway_links_capacity=[20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20,20, 20, 20, 20]
-    freeway_links_fftt=[100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100]
-    freeway_links_jam_density = [100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100]
-    freeway_links_length = [100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100]
-    congestion_nn_smoothening_number = [10,10,10,10]
-    check_route_choice = False
-    plot_congestion_io_curves = True
-    plot_demand_congestion_curves = True
-    plot_route_choice_io_curves = False
-    check_queue_spillover = False
-    file_directory = './scenario_1'
-    get_curves_data = False
+    # Initialize with dictionary or default parameters (Scenario 1)
+    def __init__(self,dict=None):
+        if not dict:
+            dict = {}
+        self.min_intervals = dict.get('min_intervals',5)
+        self.num_bins = MINS_PER_DAY / self.min_intervals
+        self.num_zones = dict.get('num_zones',4)
+        self.demand_start_times = dict.get('demand_start_times',[0, 480, 960])
+        self.demand_end_times = dict.get('demand_end_times',[240, 720, 1200])
+        self.demand_slopes = dict.get('demand_slopes',[0.1,0.1,0.1])
+        self.congestion_links_capacity = dict.get('congestion_links_capacity',[10,10,10,5])
+        self.threshold_output_for_congestion = dict.get('threshold_output_for_congestion',[1,1,1,1])
+        self.congestion_links_fftt = dict.get('congestion_links_fftt',[20,20,20,20])
+        self.congestion_links_jam_density = dict.get('congestion_links_jam_density',[100,100,100,100])
+        self.congestion_links_length = dict.get('congestion_links_length',[100,100,100,100])
+        self.freeway_links_capacity = dict.get('freeway_links_capacity',[20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20,20, 20, 20, 20])
+        self.freeway_links_fftt = dict.get('freeway_links_fftt',[100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100])
+        self.freeway_links_jam_density = dict.get('freeway_links_jam_density',[100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100])
+        self.freeway_links_length = dict.get('freeway_links_length',[100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100])
+        self.congestion_nn_smoothening_number = dict.get('congestion_nn_smoothening_number',[10,10,10,10])
+        self.check_route_choice = dict.get('check_route_choice',False)
+        self.plot_congestion_io_curves = dict.get('plot_congestion_io_curves',True)
+        self.plot_demand_congestion_curves = dict.get('plot_demand_congestion_curves',True)
+        self.plot_route_choice_io_curves = dict.get('plot_route_choice_io_curves',False)
+        self.check_queue_spillover = dict.get('check_queue_spillover',False)
+        self.file_directory = dict.get('file_directory','./scenario_1')
+        self.get_curves_data = dict.get('get_curves_data',False)
 
 def run(parameters):
     od_demand_funcs = generate_initial_demand(num_zones=parameters.num_zones, start_times=parameters.demand_start_times,
@@ -153,68 +155,13 @@ def run(parameters):
                                filepath=parameters.file_directory+'/sample_plots/spillover_congestion_plot.png',
                                congestion_spillover=congestion_spillover)
     if parameters.get_curves_data:
-        return link_demands, congestion_values, congestion_links_input_curve_from_zone, \
-               congestion_links_output_curve_from_zone, freeway_links_input_curve, freeway_links_output_curve, \
-               congestion_links_input_curve_to_zone, congestion_links_output_curve_to_zone
-
-if __name__ == '__main__':
-
-    parameters = Parameters()
-
-    # Scenario 1
-    # 4 zones, demands from 3 zones well separated
-    # No route choice
-    # No congestion spillover
-    run(parameters=parameters)
-
-    # Scenario 2
-    # 4 zones, demands from 3 zones with overlap between two
-    # No route choice
-    # No congestion spillover
-    parameters.demand_start_times = [0,200,1000]
-    parameters.demand_end_times = [240, 440, 1240]
-    parameters.file_directory = './scenario_2'
-    run(parameters=parameters)
-
-    # Scenario 3
-    # 4 zones, demands from 3 zones well separated
-    # Congestion on freeway + No route choice
-    # No congestion spillover
-    parameters = Parameters()
-    parameters.freeway_links_capacity = [20,20,20,4,20,20,20,20,20,20,20,20,20,20,20,20]
-    parameters.plot_route_choice_io_curves = True
-    parameters.file_directory = './scenario_3'
-    run(parameters=parameters)
-
-    # Scenario 4
-    # 4 zones, demands from 3 zones well separated
-    # Congestion on freeway + Route choice
-    # No congestion spillover
-    parameters = Parameters()
-    parameters.freeway_links_capacity = [20, 20, 20, 4, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20]
-    parameters.check_route_choice = True
-    parameters.plot_route_choice_io_curves = True
-    parameters.file_directory = './scenario_4'
-    run(parameters=parameters)
-
-    # Scenario 5
-    # 4 zones, demands from 3 zones well separated
-    # No route choice
-    # Plotting congestion in two zones + No congestion spillover
-    parameters = Parameters()
-    parameters.check_queue_spillover = True
-    parameters.file_directory = './scenario_5'
-    run(parameters=parameters)
-
-    # Scenario 6
-    # 4 zones, demands from 3 zones well separated
-    # No route choice
-    # Plotting congestion in two zones + Congestion spillover
-    parameters = Parameters()
-    parameters.check_queue_spillover = True
-    parameters.congestion_links_jam_density = [100,100,100,25]
-    parameters.congestion_links_length = [100, 100, 100, 10]
-    parameters.freeway_links_jam_density = [100,100,100,25,100,100,100,100,100,100,100,100,100,100,100,100]
-    parameters.freeway_links_length = [100,100,100,10,100,100,100,100,100,100,100,100,100,100,100,100]
-    parameters.file_directory = './scenario_6'
-    run(parameters=parameters)
+        dict_return = {'link_demands':link_demands, 'congestion_values':congestion_values,
+                       'congestion_links_input_curve_from_zone':congestion_links_input_curve_from_zone,
+                       'congestion_links_output_curve_from_zone':congestion_links_output_curve_from_zone,
+                       'freeway_links_input_curve':freeway_links_input_curve,
+                       'freeway_links_output_curve':freeway_links_output_curve,
+                       'congestion_links_input_curve_to_zone':congestion_links_input_curve_to_zone,
+                       'congestion_links_output_curve_to_zone': congestion_links_output_curve_to_zone}
+        if parameters.check_queue_spillover:
+            dict_return['congestion_spillover'] = congestion_spillover
+        return dict_return

@@ -1,4 +1,4 @@
-from __future__ import print_function
+import sys
 import tensorflow as tf
 from tensorflow.contrib import rnn
 import pandas as pd
@@ -49,7 +49,7 @@ def add_input_features_first_diff(input_features_data):
     return input_features_data
 
 def get_input_features_data(data,feature_cols,batch_size,n_steps,n_input):
-    input_features_data = data[feature_cols]
+    input_features_data = data[feature_cols].copy()
     input_features_data = add_input_features_first_diff(input_features_data)
     input_features_batch = get_input_features_batch(input_features_data, step, batch_size, n_steps, n_input)
     return input_features_batch
@@ -86,7 +86,7 @@ if __name__ == '__main__':
 
     # Parameters
     learning_rate = 0.01
-    training_iters = NUM_BINS * (5000 * 12 - 2)
+    n_days = 5000
     batch_size = 10
     dropout = 0.75
 
@@ -102,6 +102,8 @@ if __name__ == '__main__':
     display_step = 1000
     n_iter_per_day = NUM_BINS / n_steps
     n_plot_loss_iter = 6
+    n_plot_loss_iter = min(n_plot_loss_iter, n_iter_per_day)
+    training_iters = NUM_BINS * (n_days * n_iter_per_day - 2)
 
     # tf Graph input
     lr = tf.placeholder(tf.float32, [])
@@ -117,8 +119,22 @@ if __name__ == '__main__':
         'out': tf.Variable(tf.random_normal([n_outputs]))
     }
 
-    data = pd.read_csv('./scenario_1/lstm_input_data/input_data_realistic.csv')
-    #data_norm = (data - data.mean()) / (data.max() - data.min())
+    # Read input data and define input columns
+    data = pd.read_csv(sys.argv[1])
+    input_cols =  ['Link 0 demand','Link 1 demand', 'Link 2 demand',
+             'Congestion Link from zone 0 input count',
+             'Congestion Link from zone 1 input count',
+             'Congestion Link from zone 2 input count',
+             'Freeway Link 3 input count',
+             'Freeway Link 7 input count',
+             'Freeway Link 11 input count',
+             'Freeway Link 3 output count',
+             'Freeway Link 7 output count',
+             'Freeway Link 11 output count',
+             'Freeway Link 2 input count',
+             'Freeway Link 2 output count'
+             ]
+    output_col = 'Congestion value'
 
     # Plot demand and output data for first few days
     #plot_data_first_few_days(data,0,10)
@@ -140,9 +156,8 @@ if __name__ == '__main__':
 
         # Keep training until reach max iterations
         while step * n_steps < training_iters:
-            lstm_training_input_batch = get_LSTM_training_input(data, ['Link 0 demand','Link 1 demand', 'Link 2 demand'],
-                                                          batch_size, n_steps, n_input)
-            lstm_training_output_batch = get_LSTM_training_output(data, ['Congestion value'],step,batch_size,n_steps,n_outputs,min_lag)
+            lstm_training_input_batch = get_LSTM_training_input(data,input_cols[:n_input/2],batch_size, n_steps, n_input)
+            lstm_training_output_batch = get_LSTM_training_output(data, [output_col],step,batch_size,n_steps,n_outputs,min_lag)
 
 
             print("Iteration " + str(step))
@@ -157,7 +172,9 @@ if __name__ == '__main__':
             loss_value = sess.run(loss, feed_dict={x: lstm_training_input_batch, y: lstm_training_output_batch})
 
             # Store loss value for plotting
-            if step % n_iter_per_day == n_plot_loss_iter:
+            if n_iter_per_day == 1:
+                loss_values.append(np.sqrt(loss_value / n_outputs))
+            elif step % n_iter_per_day == n_plot_loss_iter:
                 loss_values.append(np.sqrt(loss_value/n_outputs))
 
             if step % display_step == 0:
@@ -171,7 +188,7 @@ if __name__ == '__main__':
                 print ("Training output = " + str(y_value))
 
                 # Plot training prediction vs actual training output
-                start_time = (step * MIN_INTERVALS * n_steps + MIN_INTERVALS * (n_steps + min_lag)) % MIN_PER_DAY
+                start_time = (step * MIN_INTERVALS * n_steps + MIN_INTERVALS * min_lag) % MIN_PER_DAY
                 end_time = start_time + MIN_INTERVALS * n_outputs
                 plot_comparison(pred_value, y_value, start_time, end_time)
 

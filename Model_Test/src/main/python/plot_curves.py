@@ -8,6 +8,8 @@ def plot_io_curves(io_series, filepath, min_intervals):
     for (input_series, output_series) in io_series:
         plt.plot(indices, input_series)
         plt.plot(indices, output_series)
+    plt.ylabel('Cumulative number of vehicles')
+    plt.xlabel('Time from midnight (mins)')
     plt.savefig(filepath)
     plt.close()
 
@@ -16,8 +18,9 @@ def plot_demand_congestion(demands, congestion, filepath, congestion_spillover =
     fig, ax1 = plt.subplots()
     ax2 = ax1.twinx()
     if congestion_spillover is not None:
-        ax2.plot(indices, congestion, 'b-')
-        ax2.plot(indices, congestion_spillover, 'r-')
+        ax2.plot(indices, congestion, 'b-',label='Zone c')
+        ax2.plot(indices, congestion_spillover, 'r-', label='Zone a')
+        ax2.legend()
         ax2.set_ylim([0,120])
     else:
         demand_colors = ['y-', 'g-', 'r-']
