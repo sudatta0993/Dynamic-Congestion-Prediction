@@ -1,0 +1,18 @@
+{"num_zones": 54,
+  "num_links": 108,
+  "congestion_zone_nos": [0,40],
+  "congestion_nn_smoothening_number": 10,
+  "threshold_output_for_congestion": 1,
+  "start_day": 0,
+  "end_day": 1000,
+  "num_profiles": 10,
+  "arrival_count_dir_base_path": "./typical_day_input_data_h_w_100_K_",
+  "arrival_count_file_name": "ArrivalCounts.csv",
+  "link_count_dir_base_path": "./typical_day_input_data_h_w_100_K_",
+  "link_count_file_name": "LinkCounts.csv",
+  "od_count_dir_base_path": "./typical_day_input_data_h_w_100_K_",
+  "od_count_dir_name": "ODCounts",
+  "od_count_base_file_name": "ODCounts_",
+  "output_file_name": "lstm_input_data.csv",
+  "min_intervals": 5
+}
