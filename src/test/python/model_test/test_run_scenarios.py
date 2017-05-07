@@ -1,5 +1,5 @@
 import unittest
-from src.main.python.run_scenarios import Parameters, run
+from src.main.python.model_test.run_scenarios import Parameters, run
 
 class test_run_scenarios(unittest.TestCase):
 

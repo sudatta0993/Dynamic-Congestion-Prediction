@@ -1,5 +1,5 @@
 import unittest
-from src.main.python.generate_demand import simple_h_w_demand_func
+from src.main.python.model_test.generate_demand import simple_h_w_demand_func
 
 class test_simple_h_w_demand_func(unittest.TestCase):
 
