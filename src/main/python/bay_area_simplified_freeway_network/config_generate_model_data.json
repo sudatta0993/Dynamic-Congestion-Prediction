@@ -1,7 +1,7 @@
 {"num_zones": 54,
   "num_links": 108,
   "congestion_zone_nos": [0,40],
-  "congestion_nn_smoothening_number": 10,
+  "congestion_nn_smoothening_number": 20,
   "threshold_output_for_congestion": 1,
   "start_day": 0,
   "end_day": 1000,

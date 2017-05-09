@@ -38,16 +38,16 @@ if __name__ == '__main__':
     n_plot_loss_iter = 6
     n_plot_loss_iter = min(n_plot_loss_iter, n_iter_per_day)
     training_iters = NUM_BINS * ((n_days - 1) * n_iter_per_day)
-    output_col = 'Congestion value'
+    output_col_index = -1
 
     # Initialize
     loss_values = []
 
     # Keep training until reach max iterations
     for i in range(n_days):
-        output = np.array(data[output_col][(i+1)*NUM_BINS + (n_plot_loss_iter - 1)*n_outputs:
+        output = np.array(data[data.columns[output_col_index]][(i+1)*NUM_BINS + (n_plot_loss_iter - 1)*n_outputs:
                       (i+1)*NUM_BINS + n_plot_loss_iter*n_outputs])
-        prediction = np.array(data[output_col][i*NUM_BINS + (n_plot_loss_iter - 1)*n_outputs:
+        prediction = np.array(data[data.columns[output_col_index]][i*NUM_BINS + (n_plot_loss_iter - 1)*n_outputs:
                       i*NUM_BINS + n_plot_loss_iter*n_outputs])
         loss_values.append(rmse(output, prediction))
         if i > 0 and i % display_step == 0:

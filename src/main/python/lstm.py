@@ -10,13 +10,13 @@ MIN_PER_DAY = 1440
 MIN_INTERVALS = 5
 NUM_BINS = MIN_PER_DAY / MIN_INTERVALS
 
-def plot_data_first_few_days(data, start_day, end_day):
+def plot_data_first_few_days(data, input_data_column_index_ranges, output_column_index, start_day, end_day):
     fig, ax1 = plt.subplots()
     ax2 = ax1.twinx()
-    ax1.plot(data['Link 0 demand'][NUM_BINS*start_day:NUM_BINS*end_day])
-    ax1.plot(data['Link 1 demand'][NUM_BINS*start_day:NUM_BINS*end_day])
-    ax1.plot(data['Link 2 demand'][NUM_BINS*start_day:NUM_BINS*end_day])
-    ax2.plot(data['Congestion value'][NUM_BINS*start_day:NUM_BINS*end_day],'-y')
+    #ax1.plot(data[data.columns[input_data_column_index_ranges[0]]][NUM_BINS*start_day:NUM_BINS*end_day])
+    #ax1.plot(data[data.columns[input_data_column_index_ranges[1]]][NUM_BINS*start_day:NUM_BINS*end_day])
+    #ax1.plot(data[data.columns[input_data_column_index_ranges[2]]][NUM_BINS*start_day:NUM_BINS*end_day])
+    ax2.plot(data[data.columns[output_column_index]][NUM_BINS*start_day:NUM_BINS*end_day],'-y')
     plt.show()
 
 def define_loss_and_optimizer(pred, y):
@@ -138,7 +138,7 @@ if __name__ == '__main__':
         }
 
         # Plot demand and output data for first few days
-        # plot_data_first_few_days(data,0,10)
+        #plot_data_first_few_days(data,input_data_column_index_ranges, output_column_index, 0,10)
 
         # Define LSTM prediction framework
         pred = LSTM(x, weights, biases, dropout)
