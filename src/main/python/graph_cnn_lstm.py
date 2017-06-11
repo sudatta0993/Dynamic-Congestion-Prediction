@@ -21,7 +21,7 @@ def get_train_val_data(data,input_col_index_ranges,output_column_index,n_days,tr
         end_col_index = input_col_index_ranges[2 * i + 1] + 1
         cols = data[data.columns[start_col_index:end_col_index]].copy()
         frames_train.append(cols.head(int(n_days*NUM_BINS*train_perc)))
-        n_eval = math.ceil(n_days * NUM_BINS * (1 - train_perc)/batch_size)*batch_size
+        n_eval = n_days * NUM_BINS * (1 - train_perc)
         frames_val.append(cols.tail(int(n_eval)))
     X_train = np.delete(pd.concat(frames_train, axis=1).as_matrix(),0,0)
     y_train = np.delete(data[data.columns[output_column_index]].head(int(n_days*NUM_BINS*train_perc)).as_matrix(),0,0)

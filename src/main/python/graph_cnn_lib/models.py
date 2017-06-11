@@ -7,6 +7,8 @@ import scipy.sparse
 import tensorflow as tf
 from tensorflow.contrib import rnn
 
+import matplotlib.pyplot as plt
+
 import graph
 
 
@@ -87,7 +89,7 @@ class base_model(object):
         """
         predictions, loss = self.predict(data, labels, sess)
         string = 'loss: {:.2e}'.format(loss)
-        return string, loss
+        return string, predictions, loss
 
     def fit(self, train_data, train_labels, val_data, val_labels,min_lag):
         sess = tf.Session(graph=self.graph)
@@ -119,13 +121,28 @@ class base_model(object):
             feed_dict = {self.ph_data: batch_data, self.ph_labels: batch_labels, self.ph_dropout: self.dropout}
             learning_rate, loss_average = sess.run([self.op_train, self.op_loss_average], feed_dict)
 
+            string, predictions, loss = self.evaluate(np.expand_dims(val_data, axis=0),
+                                                      np.expand_dims(val_labels, axis=0), sess)
+            losses.append(np.sqrt(loss/self.batch_size))
+
             # Periodical evaluation of the model.
             if step % self.eval_frequency == 0 or step == num_steps:
                 print "Number of iterations = " + str(step)
-                print('  learning_rate = {:.2e}, loss_average = {:.2e}'.format(learning_rate, loss_average))
-                string, loss = self.evaluate(np.expand_dims(val_data,axis=0), np.expand_dims(val_labels,axis=0), sess)
-                losses.append(loss)
+                print('  learning_rate = {:.2e}, loss_average = {:.2e}'.format(learning_rate, loss))
                 print('  validation {}'.format(string))
+
+                # Plot predictions
+                plt.plot(val_labels)
+                plt.plot(predictions)
+                plt.show()
+
+                # Plot losses
+                plt.plot(losses)
+                plt.show()
+
+                # Print average RMSE
+                print "RMSE"
+                print np.sqrt(loss / self.batch_size)
 
                 # Summaries for TensorBoard.
                 summary = tf.Summary()
