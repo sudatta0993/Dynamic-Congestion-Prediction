@@ -91,7 +91,7 @@ class base_model(object):
         string = 'loss: {:.2e}'.format(loss)
         return string, predictions, loss
 
-    def fit(self, train_data, train_labels, val_data, val_labels,min_lag):
+    def fit(self, train_data, train_labels, min_lag):
         sess = tf.Session(graph=self.graph)
         shutil.rmtree(self._get_path('summaries'), ignore_errors=True)
         writer = tf.summary.FileWriter(self._get_path('summaries'), self.graph)
@@ -121,8 +121,8 @@ class base_model(object):
             feed_dict = {self.ph_data: batch_data, self.ph_labels: batch_labels, self.ph_dropout: self.dropout}
             learning_rate, loss_average = sess.run([self.op_train, self.op_loss_average], feed_dict)
 
-            string, predictions, loss = self.evaluate(np.expand_dims(val_data, axis=0),
-                                                      np.expand_dims(val_labels, axis=0), sess)
+            string, predictions, loss = self.evaluate(batch_data,
+                                                      batch_labels, sess)
             losses.append(np.sqrt(loss/self.batch_size))
 
             # Periodical evaluation of the model.
@@ -132,8 +132,9 @@ class base_model(object):
                 print('  validation {}'.format(string))
 
                 # Plot predictions
-                plt.plot(val_labels)
-                plt.plot(predictions)
+                plt.plot(predictions,label='Prediction')
+                plt.plot(batch_labels[0],label='Actual')
+                plt.legend()
                 plt.show()
 
                 # Plot losses

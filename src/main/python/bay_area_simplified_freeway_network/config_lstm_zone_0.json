@@ -1,5 +1,5 @@
 {
-  "input_file_path": "./bay_area_simplified_freeway_network/lstm_input_data.csv",
+  "input_file_path": "./bay_area_simplified_freeway_network/scenario_2/lstm_input_data.csv",
   "input_data_column_index_ranges": [1,54,109,216],
   "output_column_index": -2,
   "n_days": 1000,

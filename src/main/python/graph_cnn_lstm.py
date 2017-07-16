@@ -13,25 +13,20 @@ MIN_PER_DAY = 1440
 MIN_INTERVALS = 5
 NUM_BINS = MIN_PER_DAY / MIN_INTERVALS
 
-def get_train_val_data(data,input_col_index_ranges,output_column_index,n_days,train_perc,batch_size):
+def get_train_val_data(data,input_col_index_ranges,output_column_index,n_days):
     frames_train = []
-    frames_val = []
     for i in range(len(input_col_index_ranges) / 2):
         start_col_index = input_col_index_ranges[2 * i]
         end_col_index = input_col_index_ranges[2 * i + 1] + 1
         cols = data[data.columns[start_col_index:end_col_index]].copy()
-        frames_train.append(cols.head(int(n_days*NUM_BINS*train_perc)))
-        n_eval = n_days * NUM_BINS * (1 - train_perc)
-        frames_val.append(cols.tail(int(n_eval)))
+        frames_train.append(cols.head(int(n_days*NUM_BINS)))
     X_train = np.delete(pd.concat(frames_train, axis=1).as_matrix(),0,0)
-    y_train = np.delete(data[data.columns[output_column_index]].head(int(n_days*NUM_BINS*train_perc)).as_matrix(),0,0)
-    X_val = pd.concat(frames_val, axis=1).as_matrix()
-    y_val = data[data.columns[output_column_index]].tail(int(n_eval)).as_matrix()
+    y_train = np.delete(data[data.columns[output_column_index]].head(int(n_days*NUM_BINS)).as_matrix(),0,0)
     d = len(X_train[0])
-    return X_train, y_train, X_val, y_val, d
+    return X_train, y_train, d
 
 
-def get_cnn_graph_input(X_train, X_val, d):
+def get_cnn_graph_input(X_train, d):
     dist, idx = graph.distance_scipy_spatial(X_train.T, k=2, metric='euclidean')
     A = graph.adjacency(dist, idx).astype(np.float32)
     assert A.shape == (d, d)
@@ -44,23 +39,9 @@ def get_cnn_graph_input(X_train, X_val, d):
     X_train = coarsening.perm_data(X_train, perm)
     print "X train size after graph coarsing"
     print "n = " + str(len(X_train)) + ", d = " + str(len(X_train[0]))
-    X_val = coarsening.perm_data(X_val, perm)
     L = [graph.laplacian(A, normalized=True) for A in graphs]
     graph.plot_spectrum(L)
-    return L, X_train, X_val
-
-def LSTM(x, weights, biases, n_hidden, n_layers):
-
-    # Define the LSTM cells
-    lstm_cell = rnn.BasicLSTMCell(n_hidden, forget_bias=1.0)
-    lstm_cells = [lstm_cell] * n_layers
-    stacked_lstm = rnn.MultiRNNCell(lstm_cells)
-    outputs, states = tf.nn.dynamic_rnn(stacked_lstm, x, dtype=tf.float32, time_major=False)
-
-    h = tf.transpose(outputs, [1, 0, 2])
-    #h = tf.nn.dropout(h, dropout)
-    pred = tf.nn.bias_add(tf.matmul(h[-1], weights['out']), biases['out'])
-    return pred
+    return L, X_train
 
 if __name__ == '__main__':
 
@@ -76,7 +57,6 @@ if __name__ == '__main__':
         input_data_column_index_ranges = dict.get('input_data_column_index_ranges')
         output_column_index = dict.get('output_column_index')
         n_days = dict.get('n_days')
-        train_perc = dict.get('train_perc')
 
         # Overall parameters
         dir_name = 'demo'
@@ -104,11 +84,9 @@ if __name__ == '__main__':
         cnn_pool_size = dict.get('cnn_pool_size')
         cnn_output_dim = dict.get('cnn_output_dim')
 
-    X_train, y_train, X_val, y_val, d = get_train_val_data(data,
-                                                           input_data_column_index_ranges,
-                                                           output_column_index,n_days,train_perc,
-                                                           batch_size)
-    L, X_train, X_val = get_cnn_graph_input(X_train, X_val, d)
+    X_train, y_train, d = get_train_val_data(data, input_data_column_index_ranges,
+                                            output_column_index,n_days)
+    L, X_train = get_cnn_graph_input(X_train, d)
 
     model = models.cnn_lstm(L, cnn_num_conv_filters, cnn_poly_order,
                             cnn_pool_size, cnn_output_dim, cnn_filter,
@@ -117,7 +95,7 @@ if __name__ == '__main__':
                             dropout, batch_size, eval_frequency,
                             dir_name,lstm_n_hidden, lstm_n_layers, lstm_n_outputs)
 
-    loss = model.fit(X_train, y_train, X_val, y_val,lstm_min_lag)
+    loss = model.fit(X_train, y_train,lstm_min_lag)
     fig, ax1 = plt.subplots(figsize=(15, 5))
     ax2 = ax1.twinx()
     ax2.plot(loss, 'g.-')
