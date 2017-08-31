@@ -13,5 +13,6 @@
   "min_lag": 24,
   "n_layers": 1,
   "display_step": 1000,
-  "n_plot_loss_iter": 6
+  "n_plot_loss_iter": 6,
+  "attention_display_step": 25000
 }
