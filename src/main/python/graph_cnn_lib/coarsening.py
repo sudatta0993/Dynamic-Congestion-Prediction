@@ -1,3 +1,6 @@
+### This code has been adopted from:
+### https://github.com/mdeff/cnn_graph
+
 import numpy as np
 import scipy.sparse
 

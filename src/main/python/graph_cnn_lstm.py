@@ -1,11 +1,8 @@
 import json
 import sys
-import math
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import tensorflow as tf
-from tensorflow.contrib import rnn
 
 from graph_cnn_lib import coarsening, graph, models
 
@@ -68,6 +65,7 @@ if __name__ == '__main__':
         decay_rate = dict.get('decay_rate')
         momentum = dict.get('momentum')
         decay_steps = n_days / batch_size
+        attention_eval_frequency = dict.get('attention_display_step')
 
         # LSTM Network Parameters
         lstm_n_hidden = dict.get('lstm_n_hidden')
@@ -92,7 +90,7 @@ if __name__ == '__main__':
                             cnn_pool_size, cnn_output_dim, cnn_filter,
                             cnn_brelu, cnn_pool, learning_rate, decay_rate,
                             decay_steps, momentum, regularization,
-                            dropout, batch_size, eval_frequency,
+                            dropout, batch_size, eval_frequency, attention_eval_frequency,
                             dir_name,lstm_n_hidden, lstm_n_layers, lstm_n_outputs)
 
     loss = model.fit(X_train, y_train,lstm_min_lag)

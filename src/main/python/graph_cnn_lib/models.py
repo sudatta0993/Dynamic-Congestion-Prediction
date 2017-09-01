@@ -1,3 +1,7 @@
+### This code has been adopted from:
+### https://github.com/mdeff/cnn_graph
+### and modified as per requirements
+
 import collections
 import os
 import shutil
@@ -15,6 +19,10 @@ import graph
 NFEATURES = 28**2
 NCLASSES = 10
 
+MIN_PER_DAY = 1440
+MIN_INTERVALS = 5
+NUM_BINS = MIN_PER_DAY / MIN_INTERVALS
+
 def LSTM(x, weights, biases, n_hidden, n_layers):
 
     # Define the LSTM cells
@@ -26,8 +34,70 @@ def LSTM(x, weights, biases, n_hidden, n_layers):
     h = tf.transpose(outputs, [1, 0, 2])
     #h = tf.nn.dropout(h, dropout)
     pred = tf.nn.bias_add(tf.matmul(h[-1], weights['out']), biases['out'])
-    return pred
+    return pred, h
 
+def temporal_attention_pred(h, weights, biases, n_steps):
+    att = []
+    for i in range(1,n_steps+1):
+        att.append(tf.nn.bias_add(tf.matmul(h[-i], weights['out']), biases['out']))
+    return att
+
+def temporal_attention(pred_value_2, pred_value, n_steps):
+    cum_temp_att = []
+    for i in range(n_steps):
+        #print "Time step = " + str(i)
+        rmse = np.sqrt(np.mean((pred_value_2[i] - pred_value) ** 2))
+        #print "RMSE = " + str(rmse)
+        cum_temp_att.append(rmse)
+        #plot_comparison(pred_value_2[i], y_value, start_time, end_time)
+    temp_att = []
+    for i in range(n_steps - 1):
+        temp_att.append(0.0 if cum_temp_att[i+1] == cum_temp_att[i] else cum_temp_att[i+1] - cum_temp_att[i])
+    sum_temp_att = sum(temp_att)
+    temp_att = [x / sum_temp_att if sum_temp_att > 0 else 1.0/len(temp_att) for x in temp_att]
+    return temp_att
+
+def spatial_attention(v1, lstm_training_input_batch, n_input, n_hidden, n_steps):
+    input_weights = v1[:n_input, :n_hidden]
+    transition_weights = v1[n_input:, :n_hidden]
+    input_data = lstm_training_input_batch[0]
+    spatial_att = np.zeros((n_steps, n_input))
+    for i in range(n_steps):
+        hidden_layer_values = input_weights.T.dot(input_data[i])
+        base_rmse = np.sqrt(np.mean(hidden_layer_values ** 2))
+        hidden_layer_values_pred = np.zeros((n_input, n_hidden))
+        for j in range(n_input):
+            hidden_layer_values_pred[j] = input_weights[j] * input_data[i, j]
+            #print "Time step = " + str(i)
+            #print "Input index = " + str(j)
+            rmse = np.sqrt(np.mean((hidden_layer_values_pred[j] - hidden_layer_values) ** 2))
+            #print "RMSE = " + str(rmse)
+            spatial_att[i,j] = 0.0 if rmse == base_rmse else (base_rmse - rmse)
+            '''plt.plot(hidden_layer_values)
+            plt.plot(hidden_layer_values_pred[j])
+            plt.show()'''
+    sum_spatial_att = spatial_att.sum(axis=1)
+    for i in range(n_steps):
+        spatial_att[i] = spatial_att[i]/sum_spatial_att[i] if sum_spatial_att[i] > 0 else 1.0/len(spatial_att[i])
+    return spatial_att
+
+def plot_temporal_attention(temp_att, start_time, end_time):
+    fig = plt.imshow(np.atleast_2d(temp_att), cmap='jet', interpolation='nearest')
+    plt.xlabel('Time lag (5 min intervals)')
+    plt.title('Temporal Attention, Start Time = ' + str(start_time) + ' mins, End Time = ' + str(end_time) + ' mins',
+              y=12)
+    fig.axes.get_yaxis().set_visible(False)
+    plt.colorbar()
+    plt.show()
+
+def plot_spatial_attention(spatial_att, start_time, end_time):
+    plt.imshow(spatial_att, cmap='jet', interpolation='nearest')
+    plt.xlabel('Variable index')
+    plt.ylabel('Time lag (5 min intervals)')
+    plt.title('Spatial Attention, Start Time = ' + str(start_time) + ' mins, End Time = ' + str(end_time) + ' mins',
+              x=-0.5)
+    plt.colorbar()
+    plt.show()
 
 # Common methods for all models
 
@@ -62,17 +132,18 @@ class base_model(object):
                 batch_labels = np.zeros(self.batch_size)
                 batch_labels[:end - begin] = labels[begin:end]
                 feed_dict[self.ph_labels] = np.expand_dims(batch_labels,axis=0)
-                batch_pred, batch_loss = sess.run([self.op_prediction, self.op_loss], feed_dict)
+                batch_pred, batch_hidden_states_value, batch_loss = sess.run([self.op_prediction, self.hidden_states, self.op_loss], feed_dict)
+                batch_pred_2 = sess.run(self.temp_att_pred, feed_dict={self.h:batch_hidden_states_value})
                 loss += batch_loss
             else:
-                batch_pred = sess.run(self.op_prediction, feed_dict)
-
+                batch_pred, batch_hidden_states_value = sess.run([self.op_prediction, self.hidden_states], feed_dict)
+                batch_pred_2 = sess.run(self.temp_att_pred, feed_dict={self.h: batch_hidden_states_value})
             predictions[begin:end] = batch_pred[:end - begin]
 
         if labels is not None:
-            return predictions, loss * self.batch_size / size
+            return predictions, batch_pred_2, loss * self.batch_size / size
         else:
-            return predictions
+            return predictions, batch_pred_2
 
     def evaluate(self, data, labels, sess=None):
         """
@@ -87,9 +158,9 @@ class base_model(object):
         labels: size N
             N: number of signals (samples)
         """
-        predictions, loss = self.predict(data, labels, sess)
+        predictions, predictions_2, loss = self.predict(data, labels, sess)
         string = 'loss: {:.2e}'.format(loss)
-        return string, predictions, loss
+        return string, predictions, predictions_2, loss
 
     def fit(self, train_data, train_labels, min_lag):
         sess = tf.Session(graph=self.graph)
@@ -107,6 +178,8 @@ class base_model(object):
         num_steps = int(train_data.shape[0] / self.batch_size)
         for step in range(1, num_steps + 1):
 
+            print("Iteration " + str(step))
+
             # Be sure to have used all the samples before using one a second time.
             if len(indices_input) < self.batch_size:
                 indices_input.extend(np.arange((step - 1) * self.batch_size, step * self.batch_size))
@@ -121,12 +194,21 @@ class base_model(object):
             feed_dict = {self.ph_data: batch_data, self.ph_labels: batch_labels, self.ph_dropout: self.dropout}
             learning_rate, loss_average = sess.run([self.op_train, self.op_loss_average], feed_dict)
 
-            string, predictions, loss = self.evaluate(batch_data,
+            string, predictions, predictions_2, loss = self.evaluate(batch_data,
                                                       batch_labels, sess)
+            temp_att = temporal_attention(predictions_2, predictions, self.batch_size)
+
+            for v in sess.graph.get_collection('trainable_variables'):
+                if ('weights:0' in v.name):
+                    trained_weights = v.eval(sess)
+                if ('biases:0' in v.name):
+                    v2 = v.eval(sess)
+            n_steps, n_input = batch_data[0].shape
+            spatial_att = spatial_attention(trained_weights, batch_data, n_input, self.lstm_n_hidden, n_steps)
             losses.append(np.sqrt(loss/self.batch_size))
 
             # Periodical evaluation of the model.
-            if step % self.eval_frequency == 0 or step == num_steps:
+            if step % self.eval_frequency == 0 or step == num_steps or step > self.attention_eval_frequency:
                 print "Number of iterations = " + str(step)
                 print('  learning_rate = {:.2e}, loss_average = {:.2e}'.format(learning_rate, loss))
                 print('  validation {}'.format(string))
@@ -144,6 +226,18 @@ class base_model(object):
                 # Print average RMSE
                 print "RMSE"
                 print np.sqrt(loss / self.batch_size)
+
+                if step > self.attention_eval_frequency:
+                    # Print and plot temporal attentions
+                    start_time = (step * MIN_INTERVALS * self.batch_size + MIN_INTERVALS * min_lag) % MIN_PER_DAY
+                    end_time = start_time + MIN_INTERVALS * len(batch_labels[0])
+                    print "Temporal attentions:"
+                    print temp_att
+                    plot_temporal_attention(temp_att, start_time, end_time)
+
+                    print "Spatial attentions:"
+                    print spatial_att
+                    plot_spatial_attention(spatial_att, start_time, end_time)
 
                 # Summaries for TensorBoard.
                 summary = tf.Summary()
@@ -171,6 +265,7 @@ class base_model(object):
                 self.ph_data = tf.placeholder("float", [None, self.batch_size, M_0],'data')
                 self.ph_labels = tf.placeholder("float", [None, lstm_n_output],'labels')
                 self.ph_dropout = tf.placeholder(tf.float32, (), 'dropout')
+                self.h = tf.placeholder("float", [lstm_n_output, None, lstm_n_hidden])
 
                 # Define weights
                 self.weights = {
@@ -181,7 +276,9 @@ class base_model(object):
                 }
 
             # Model.
-            self.pred = LSTM(self.ph_data, self.weights, self.biases, lstm_n_hidden, lstm_n_layers)
+            self.lstm_n_hidden, self.lstm_n_layers, self.lstm_n_output = lstm_n_hidden, lstm_n_layers, lstm_n_output
+            self.pred, self.hidden_states = LSTM(self.ph_data, self.weights, self.biases, lstm_n_hidden, lstm_n_layers)
+            self.temp_att_pred = temporal_attention_pred(self.h, self.weights, self.biases, self.batch_size)
             self.op_loss = self.loss(self.pred,self.ph_labels)
             self.op_loss_average = self.op_loss
             self.op_train = self.training(self.op_loss, self.learning_rate,
@@ -283,7 +380,7 @@ class cnn_lstm(base_model):
 
     def __init__(self, L, F, K, p, M, filter='chebyshev5', brelu='b1relu', pool='mpool1',
                  learning_rate=0.1, decay_rate=0.95, decay_steps=None, momentum=0.9,
-                 regularization=0, dropout=0, batch_size=100, eval_frequency=200,
+                 regularization=0, dropout=0, batch_size=100, eval_frequency=200, attention_eval_frequency = 200,
                  dir_name='', lstm_n_hidden = 100, lstm_n_layers = 1, lstm_n_output = 288):
         base_model.__init__(self)
 
@@ -334,7 +431,8 @@ class cnn_lstm(base_model):
         self.learning_rate = learning_rate
         self.decay_rate, self.decay_steps, self.momentum = decay_rate, decay_steps, momentum
         self.regularization, self.dropout = regularization, dropout
-        self.batch_size, self.eval_frequency = batch_size, eval_frequency
+        self.batch_size, self.eval_frequency, self.attention_eval_frequency = batch_size, eval_frequency,\
+                                                                              attention_eval_frequency
         self.dir_name = dir_name
         self.filter = getattr(self, filter)
         self.brelu = getattr(self, brelu)

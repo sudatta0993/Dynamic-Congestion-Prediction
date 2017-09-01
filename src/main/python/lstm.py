@@ -59,7 +59,7 @@ def temporal_attention(pred_value_2, pred_value, n_steps):
     temp_att = [x / sum_temp_att if sum_temp_att > 0 else 1.0/len(temp_att) for x in temp_att]
     return temp_att
 
-def spatial_attention(v1, lstm_training_input_batch):
+def spatial_attention(v1, lstm_training_input_batch, n_input, n_hidden, n_steps):
     input_weights = v1[:n_input, :n_hidden]
     transition_weights = v1[n_input:, :n_hidden]
     input_data = lstm_training_input_batch[0]
@@ -280,7 +280,7 @@ if __name__ == '__main__':
                         print temp_att
                         plot_temporal_attention(temp_att, start_time, end_time)
 
-                        spatial_att = spatial_attention(v1,lstm_training_input_batch)
+                        spatial_att = spatial_attention(v1,lstm_training_input_batch, n_input, n_hidden, n_steps)
                         print "Spatial attentions:"
                         print spatial_att
                         plot_spatial_attention(spatial_att, start_time, end_time)
