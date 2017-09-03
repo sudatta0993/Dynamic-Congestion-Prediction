@@ -12,6 +12,7 @@
   "n_outputs": 288,
   "min_lag": 0,
   "n_layers": 10,
-  "display_step": 10,
-  "n_plot_loss_iter": 6
+  "display_step": 20,
+  "n_plot_loss_iter": 6,
+  "attention_display_step":120
 }

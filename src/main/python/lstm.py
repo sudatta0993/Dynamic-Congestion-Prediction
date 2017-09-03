@@ -260,8 +260,7 @@ if __name__ == '__main__':
                     for v in tf.trainable_variables():
                         if ('weights:0' in v.name):
                             v1 = v.eval()
-                        if ('biases:0' in v.name):
-                            v2 = v.eval()
+                            break
 
                     # Plot training prediction vs actual training output
                     start_time = (step * MIN_INTERVALS * n_steps + MIN_INTERVALS * min_lag) % MIN_PER_DAY

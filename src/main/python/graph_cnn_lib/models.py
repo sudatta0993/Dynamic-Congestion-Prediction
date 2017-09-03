@@ -94,8 +94,7 @@ def plot_spatial_attention(spatial_att, start_time, end_time):
     plt.imshow(spatial_att, cmap='jet', interpolation='nearest')
     plt.xlabel('Variable index')
     plt.ylabel('Time lag (5 min intervals)')
-    plt.title('Spatial Attention, Start Time = ' + str(start_time) + ' mins, End Time = ' + str(end_time) + ' mins',
-              x=-0.5)
+    plt.title('Spatial Attention, Start Time = ' + str(start_time) + ' mins, End Time = ' + str(end_time) + ' mins')
     plt.colorbar()
     plt.show()
 

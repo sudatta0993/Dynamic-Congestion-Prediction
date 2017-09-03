@@ -7,12 +7,12 @@
   "learning_rate": 0.001,
   "decay_rate": 0.95,
   "momentum": 0.9,
-  "batch_size": 288,
-  "eval_frequency": 10,
+  "batch_size": 24,
+  "eval_frequency": 100,
   "regularization": 5e-4,
   "dropout": 1,
   "lstm_n_hidden": 100,
-  "lstm_n_outputs": 288,
+  "lstm_n_outputs": 24,
   "lstm_min_lag": 0,
   "lstm_n_layers": 1,
   "n_plot_loss_iter": 6,
@@ -22,5 +22,6 @@
   "cnn_num_conv_filters":[32, 64],
   "cnn_poly_order":[20, 20],
   "cnn_pool_size":[1, 1],
-  "cnn_output_dim":[512, 1]
+  "cnn_output_dim":[512, 1],
+  "attention_display_step":1000
 }
