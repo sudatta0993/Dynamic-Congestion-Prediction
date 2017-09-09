@@ -87,6 +87,7 @@ def write_csv(filename, start_day, end_day, parameters, variable_slope = False, 
                 parameters.demand_end_times = parameters.demand_start_times + np.array(
                     np.array(default_parameters.demand_end_times)
                     - np.array(default_parameters.demand_start_times))
+            parameters.incident_time = int(np.random.rand()*MINS_PER_DAY)
             dict_return = run(parameters=parameters)
     csvfile.close()
 

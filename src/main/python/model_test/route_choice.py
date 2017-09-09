@@ -69,7 +69,7 @@ def update_alternate_route_io_curves(alternate_route, alternate_route_fftts, cum
 
 
 def check_route_choice(best_route_input_curve, best_route_output_curve, alternate_route, best_route_fftt,
-                       best_route_bottleneck_capacity, alternate_route_fftts,min_intervals,num_bins):
+                       best_route_bottleneck_capacity, alternate_route_fftts,min_intervals,num_bins,incident_bin):
     best_route_tts = find_best_route_tts(best_route_input_curve, best_route_output_curve,min_intervals,num_bins)
     best_route_max_tt = max(best_route_tts)
     if best_route_max_tt < sum(alternate_route_fftts):
@@ -79,16 +79,24 @@ def check_route_choice(best_route_input_curve, best_route_output_curve, alternat
         index_of_first_switch, index_of_last_switch = find_route_switch_indices(best_route_tts, alternate_route_fftts,
                                                       best_route_input_curve, best_route_bottleneck_capacity,
                                                       min_intervals, num_bins)
-        cum_diverted_number, best_route_input_curve = calculate_cumulative_diverted_curve(index_of_first_switch,
-                                                                                          index_of_last_switch,
-                                                                                          best_route_input_curve,
+        if index_of_first_switch > incident_bin:
+            print "Incident happened before first route switch, therefore no route change"
+        else:
+            if index_of_last_switch > incident_bin:
+                print "Incident happened during route switch"
+                index_of_last_switch = incident_bin
+            else:
+                print "Incident happened after all route switch, therefore no effect of incident"
+            cum_diverted_number, best_route_input_curve = calculate_cumulative_diverted_curve(index_of_first_switch,
+                                                                                              index_of_last_switch,
+                                                                                              best_route_input_curve,
+                                                                                              best_route_bottleneck_capacity,
+                                                                                              min_intervals, num_bins)
+            best_route_input_curve, best_route_output_curve = update_best_route_io_curves(best_route_input_curve,
+                                                                                          best_route_output_curve,
                                                                                           best_route_bottleneck_capacity,
-                                                                                          min_intervals, num_bins)
-        best_route_input_curve, best_route_output_curve = update_best_route_io_curves(best_route_input_curve,
-                                                                                      best_route_output_curve,
-                                                                                      best_route_bottleneck_capacity,
-                                                                                      best_route_fftt,min_intervals,
-                                                                                      num_bins)
-        alternate_route = update_alternate_route_io_curves(alternate_route, alternate_route_fftts, cum_diverted_number,
-                                                           min_intervals, num_bins)
+                                                                                          best_route_fftt,min_intervals,
+                                                                                          num_bins)
+            alternate_route = update_alternate_route_io_curves(alternate_route, alternate_route_fftts, cum_diverted_number,
+                                                               min_intervals, num_bins)
     return best_route_input_curve, best_route_output_curve, alternate_route

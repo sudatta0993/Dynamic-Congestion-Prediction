@@ -32,13 +32,13 @@ if __name__ == '__main__':
 
     # Parameters
     n_days = 101
-    n_outputs = 288
+    n_outputs = 24
     display_step = 100
     n_iter_per_day = NUM_BINS / n_outputs
     n_plot_loss_iter = 6
     n_plot_loss_iter = min(n_plot_loss_iter, n_iter_per_day)
     training_iters = NUM_BINS * ((n_days - 1) * n_iter_per_day)
-    output_col_index = -1
+    output_col_index = 4
 
     # Initialize
     loss_values = []

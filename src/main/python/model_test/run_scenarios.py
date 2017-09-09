@@ -5,8 +5,11 @@ from route_choice import check_route_choice
 from queue_spillover import check_queue_spillover
 from calculate_link_demand_and_congestion import get_link_congestion, get_link_demand
 from plot_curves import plot_io_curves, plot_demand_congestion
+import numpy as np
 
 MINS_PER_DAY = 1440
+
+np.random.seed(0)
 
 class Parameters():
 
@@ -37,6 +40,8 @@ class Parameters():
         self.check_queue_spillover = dict.get('check_queue_spillover',False)
         self.file_directory = dict.get('file_directory','./scenario_1')
         self.get_curves_data = dict.get('get_curves_data',False)
+        self.incident_prob = dict.get('incident_prob',0)
+        self.incident_time = dict.get('incident_time',int(np.random.rand()*MINS_PER_DAY))
 
 def run(parameters):
     od_demand_funcs = generate_initial_demand(num_zones=parameters.num_zones, start_times=parameters.demand_start_times,
@@ -71,11 +76,14 @@ def run(parameters):
         best_route_bottleneck_capacity = parameters.freeway_links_capacity[parameters.num_zones - 1]
         alternative_route_fftts = [parameters.freeway_links_fftt[parameters.num_zones - 2],
                                    parameters.freeway_links_fftt[parameters.num_zones * (parameters.num_zones - 1) - 1]]
+        incident_prob = parameters.incident_prob
+        incident_occurance = np.random.rand() < incident_prob
+        incident_bin = parameters.incident_time / parameters.min_intervals if incident_occurance else MINS_PER_DAY / parameters.min_intervals
         check_route_choice(best_route_input_curve=best_route_input_curve, best_route_output_curve=best_route_output_curve,
                            alternate_route=alternate_route,best_route_fftt=best_route_fftt,
                            best_route_bottleneck_capacity=best_route_bottleneck_capacity,
                            alternate_route_fftts=alternative_route_fftts,
-                           min_intervals=parameters.min_intervals, num_bins=parameters.num_bins)
+                           min_intervals=parameters.min_intervals, num_bins=parameters.num_bins, incident_bin=incident_bin)
 
     if parameters.plot_route_choice_io_curves:
         io_series = [

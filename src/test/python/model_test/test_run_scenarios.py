@@ -82,3 +82,19 @@ class test_run_scenarios(unittest.TestCase):
                                            100]
         parameters.file_directory = './scenario_6'
         run(parameters=parameters)
+
+    '''
+    Scenario 7
+    4 zones, demands from 3 zones well separated
+    Congestion on freeway + Route choice (suddenly disappears)
+    No congestion spillover
+    '''
+    def test_scenario_7(self):
+        parameters = Parameters()
+        parameters.freeway_links_capacity = [20, 20, 20, 4, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20]
+        parameters.check_route_choice = True
+        parameters.plot_route_choice_io_curves = True
+        parameters.incident_prob = 1
+        parameters.incident_time = 180
+        parameters.file_directory = './scenario_7'
+        run(parameters=parameters)
