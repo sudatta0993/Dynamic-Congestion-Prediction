@@ -59,9 +59,10 @@ def get_header(od_counts, link_counts, congestion_zone_nos):
 def run(num_zones, num_links, congestion_zone_nos ,congestion_nn_smoothening_number,
                    threshold_output_for_congestion, num_profiles,arrival_count_dir_base_path,
         arrival_count_file_name,link_count_dir_base_path, link_count_file_name,
-        od_count_dir_base_path, od_count_dir_name, od_count_base_file_name, NUM_BINS):
+        od_count_dir_base_path, od_count_dir_name, od_count_base_file_name, NUM_BINS,day_index):
 
     profile_no = np.random.randint(1, num_profiles + 1)
+    #profile_no = day_index % num_profiles
     arrival_counts_file_path = arrival_count_dir_base_path + str(profile_no) + os.sep + arrival_count_file_name
     link_counts_file_path = link_count_dir_base_path + str(profile_no) + os.sep + link_count_file_name
     od_counts_dir_path = od_count_dir_base_path + str(profile_no) + os.sep + od_count_dir_name
@@ -86,7 +87,7 @@ def write_csv(num_zones, num_links, congestion_zone_nos ,congestion_nn_smootheni
                     congestion_nn_smoothening_number,threshold_output_for_congestion,
                     num_profiles,arrival_count_dir_base_path, arrival_count_file_name,
                     link_count_dir_base_path, link_count_file_name,od_count_dir_base_path,
-                    od_count_dir_name, od_count_base_file_name, NUM_BINS)
+                    od_count_dir_name, od_count_base_file_name, NUM_BINS,0)
     with open(output_file_name, 'a+') as csvfile:
         writer = csv.writer(csvfile, delimiter=',')
         if start_day == 0:
@@ -97,7 +98,7 @@ def write_csv(num_zones, num_links, congestion_zone_nos ,congestion_nn_smootheni
                     congestion_nn_smoothening_number,threshold_output_for_congestion,
                     num_profiles,arrival_count_dir_base_path, arrival_count_file_name,
                     link_count_dir_base_path, link_count_file_name,od_count_dir_base_path,
-                    od_count_dir_name, od_count_base_file_name, NUM_BINS)
+                    od_count_dir_name, od_count_base_file_name, NUM_BINS,i)
             for j in range(0, MIN_PER_DAY, MIN_INTERVALS):
                 row_data = [i * MIN_PER_DAY + j]
                 for k in range(len(congestion_zone_nos)):

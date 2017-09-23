@@ -8,6 +8,8 @@ np.random.seed(0)
 
 MINS_PER_DAY = 1440
 default_parameters = Parameters()
+slope_rho = 1
+start_time_rho = 1
 slope_noise_std = 0.01
 start_time_noise_std = 30
 realistic_demand_start_times = [360,420,480]
@@ -34,7 +36,8 @@ def get_header(dict_return):
         header_row.append('Congestion Link to zone ' + str(i) + ' output count')
     return header_row
 
-def write_csv(filename, start_day, end_day, parameters, variable_slope = False, variable_times = False,
+def write_csv(filename, start_day, end_day, parameters, all_slopes, all_start_times,
+              variable_slope = False, variable_times = False,
               realistic_demand = False, min_intervals=5):
     dict_return = run(parameters=parameters)
     with open(filename,'a+') as csvfile:
@@ -74,11 +77,16 @@ def write_csv(filename, start_day, end_day, parameters, variable_slope = False, 
                 writer.writerow(row_data)
             if variable_slope:
                 parameters.demand_slopes = default_parameters.demand_slopes - np.random.rand(3) * slope_noise_std
+            parameters.demand_slopes = all_slopes[i - start_day]
             if variable_times:
                 parameters.demand_start_times = default_parameters.demand_start_times + np.random.randn(3) * \
                                                                                         start_time_noise_std
                 parameters.demand_start_times[parameters.demand_start_times < 0] = 0
                 parameters.demand_end_times = parameters.demand_start_times + np.array(
+                    np.array(default_parameters.demand_end_times) - np.array(default_parameters.demand_start_times))
+            parameters.demand_start_times = all_start_times[i - start_day]
+            parameters.demand_start_times[parameters.demand_start_times < 0] = 0
+            parameters.demand_end_times = parameters.demand_start_times + np.array(
                     np.array(default_parameters.demand_end_times) - np.array(default_parameters.demand_start_times))
             if realistic_demand:
                 parameters.congestion_links_capacity = realistic_demand_congestion_link_capacities
@@ -95,8 +103,12 @@ if __name__ == '__main__':
 
     config_file_path = sys.argv[1]
     data_file_path = sys.argv[2]
+
+    ### DEPRECATED (simply set slope_rho = 1, slope_noise_std = 0.01)
     variable_slope = sys.argv[3] in ["True","true","T", "t"]
+    ### DEPRECATED (simply set start_time_rho = 1, start_time_noise_std = 30)
     variable_times = sys.argv[4] in ["True","true","T", "t"]
+
     realistic_demand = sys.argv[5] in ["True","true","T", "t"]
     start_day = int(sys.argv[6])
     end_day = int(sys.argv[7])
@@ -104,7 +116,16 @@ if __name__ == '__main__':
     with open(config_file_path) as json_file:
         dict = json.load(json_file)
         parameters = Parameters(dict)
+        all_start_times = np.tile(default_parameters.demand_start_times, (end_day - start_day + 2,1))
+        all_slopes = np.tile(default_parameters.demand_slopes, (end_day - start_day + 2, 1))
+        for i in range(start_day+1,end_day+2):
+            for j in range(len(all_start_times[i])):
+                all_start_times[i,j] = default_parameters.demand_start_times[j] * (1-start_time_rho) + \
+                                       all_start_times[i - 1,j]*start_time_rho + np.random.randn()*start_time_noise_std
+                all_slopes[i, j] = default_parameters.demand_slopes[j] * (1 - slope_rho) + \
+                                        all_slopes[i - 1, j] * slope_rho + np.random.randn() * slope_noise_std
         write_csv(filename=parameters.file_directory + '/' + data_file_path, start_day=start_day,
                   end_day=end_day, parameters=parameters, min_intervals=parameters.min_intervals,
-                  variable_slope=variable_slope, variable_times=variable_times,realistic_demand=realistic_demand)
+                  variable_slope=variable_slope, variable_times=variable_times,realistic_demand=realistic_demand,
+                  all_start_times=all_start_times, all_slopes=all_slopes)
     json_file.close()
