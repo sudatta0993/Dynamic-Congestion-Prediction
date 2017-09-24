@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 MIN_PER_DAY = 1440
 MIN_INTERVALS = 5
 NUM_BINS = MIN_PER_DAY / MIN_INTERVALS
+NOISE_STDEV = 0
 
 def plot_data_first_few_days(data, input_data_column_index_ranges, output_column_index, start_day, end_day):
     fig, ax1 = plt.subplots()
@@ -103,7 +104,10 @@ def get_input_features_data(data,col_index_ranges,batch_size,n_steps,n_input):
         frames.append(cols)
     input_features_data = pd.concat(frames,axis=1)
     input_features_data = add_input_features_first_diff(input_features_data)
+    input_features_mean = input_features_data.mean(axis=0)
+    input_features_noise = np.random.randn()*NOISE_STDEV*input_features_mean
     input_features_batch = get_input_features_batch(input_features_data, step, batch_size, n_steps, n_input)
+    input_features_batch += input_features_noise
     return input_features_batch
 
 def get_LSTM_training_input(data,feature_cols,batch_size,n_steps,n_input):
