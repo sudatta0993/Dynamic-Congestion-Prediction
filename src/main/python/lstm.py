@@ -14,9 +14,9 @@ NOISE_STDEV = 0
 def plot_data_first_few_days(data, input_data_column_index_ranges, output_column_index, start_day, end_day):
     fig, ax1 = plt.subplots()
     ax2 = ax1.twinx()
-    #ax1.plot(data[data.columns[input_data_column_index_ranges[0]]][NUM_BINS*start_day:NUM_BINS*end_day])
-    #ax1.plot(data[data.columns[input_data_column_index_ranges[1]]][NUM_BINS*start_day:NUM_BINS*end_day])
-    #ax1.plot(data[data.columns[input_data_column_index_ranges[2]]][NUM_BINS*start_day:NUM_BINS*end_day])
+    #ax1.plot(data[data.columns[1]][NUM_BINS*start_day:NUM_BINS*end_day])
+    #ax1.plot(data[data.columns[2]][NUM_BINS*start_day:NUM_BINS*end_day])
+    #ax1.plot(data[data.columns[3]][NUM_BINS*start_day:NUM_BINS*end_day])
     ax2.plot(data[data.columns[output_column_index]][NUM_BINS*start_day:NUM_BINS*end_day],'-y')
     plt.show()
 

@@ -3,9 +3,10 @@ from generate_io_curves import get_links_output_curve, get_congestion_links_inpu
     get_congestion_links_input_curve_from_demand, get_freeway_links_input_curve_after_diverging
 from route_choice import check_route_choice
 from queue_spillover import check_queue_spillover
-from calculate_link_demand_and_congestion import get_link_congestion, get_link_demand
+from calculate_link_demand_and_congestion import get_link_congestion, get_link_demand, get_congestion_marginal_impact
 from plot_curves import plot_io_curves, plot_demand_congestion
 import numpy as np
+import os
 
 MINS_PER_DAY = 1440
 
@@ -25,6 +26,7 @@ class Parameters():
         self.demand_slopes = dict.get('demand_slopes',[0.1,0.1,0.1])
         self.congestion_links_capacity = dict.get('congestion_links_capacity',[10,10,10,5])
         self.threshold_output_for_congestion = dict.get('threshold_output_for_congestion',[1,1,1,1])
+        self.threshold_beta_for_congestion_impact = dict.get('threshold_output_for_congestion_impact',[0.01,0.01,0.01,0.01])
         self.congestion_links_fftt = dict.get('congestion_links_fftt',[20,20,20,20])
         self.congestion_links_jam_density = dict.get('congestion_links_jam_density',[100,100,100,100])
         self.congestion_links_length = dict.get('congestion_links_length',[100,100,100,100])
@@ -33,6 +35,7 @@ class Parameters():
         self.freeway_links_jam_density = dict.get('freeway_links_jam_density',[100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100])
         self.freeway_links_length = dict.get('freeway_links_length',[100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100])
         self.congestion_nn_smoothening_number = dict.get('congestion_nn_smoothening_number',[10,10,10,10])
+        self.congestion_marginal_impact_nn_smoothening_number = dict.get('congestion_marginal_impact_nn_smoothening_number',[10,10,10,10])
         self.check_route_choice = dict.get('check_route_choice',False)
         self.plot_congestion_io_curves = dict.get('plot_congestion_io_curves',True)
         self.plot_demand_congestion_curves = dict.get('plot_demand_congestion_curves',True)
@@ -42,6 +45,7 @@ class Parameters():
         self.get_curves_data = dict.get('get_curves_data',False)
         self.incident_prob = dict.get('incident_prob',0)
         self.incident_time = dict.get('incident_time',int(np.random.rand()*MINS_PER_DAY))
+        self.plot_demand_congestion_marginal_impact_curves = dict.get('plot_demand_congestion_marginal_impact_curves',True)
 
 def run(parameters):
     od_demand_funcs = generate_initial_demand(num_zones=parameters.num_zones, start_times=parameters.demand_start_times,
@@ -149,9 +153,19 @@ def run(parameters):
     link_demands = [get_link_demand(link_input_curve=congestion_links_input_curve_from_zone[i],
                                     num_bins=parameters.num_bins)
                 for i in range(parameters.num_zones - 1)]
+    congestion_marginal_impacts = get_congestion_marginal_impact(link_input_curve=congestion_links_input_curve_to_zone[parameters.num_zones - 1],
+                                                                 link_output_curve=congestion_links_output_curve_to_zone[parameters.num_zones - 1],
+                                                                 congestion_values=congestion_values,
+                                                                 marginal_impact_nn_smoothening_number=parameters.
+                                                                 congestion_marginal_impact_nn_smoothening_number[parameters.num_zones - 1],
+                                                                 min_intervals=parameters.min_intervals, num_bins=parameters.num_bins,
+                                                                 threshold_beta_for_congestion_impact=
+                                                                 parameters.threshold_beta_for_congestion_impact[parameters.num_zones - 1])
     io_series = [
     (congestion_links_input_curve_to_zone.as_matrix()[:, parameters.num_zones - 1],
      congestion_links_output_curve_to_zone.as_matrix()[:, parameters.num_zones - 1])]
+    if not os.path.exists(parameters.file_directory):
+        os.makedirs(parameters.file_directory)
     if parameters.plot_congestion_io_curves:
         plot_io_curves(io_series=io_series, filepath=parameters.file_directory+'/sample_plots/io_curve_congestion_zone_link.png',
                        min_intervals=parameters.min_intervals)
@@ -162,8 +176,13 @@ def run(parameters):
         plot_demand_congestion(demands=link_demands, congestion=congestion_values,
                                filepath=parameters.file_directory+'/sample_plots/spillover_congestion_plot.png',
                                congestion_spillover=congestion_spillover)
+    if parameters.plot_demand_congestion_marginal_impact_curves:
+        plot_demand_congestion(demands=[link_demand[:-1] for link_demand in link_demands], congestion=congestion_marginal_impacts,
+                               filepath=parameters.file_directory + '/sample_plots/demand_marginal_impact_plot.png',
+                               num_bins=parameters.num_bins - 1)
     if parameters.get_curves_data:
         dict_return = {'link_demands':link_demands, 'congestion_values':congestion_values,
+                       'congestion_marginal_impact_values': congestion_marginal_impacts,
                        'congestion_links_input_curve_from_zone':congestion_links_input_curve_from_zone,
                        'congestion_links_output_curve_from_zone':congestion_links_output_curve_from_zone,
                        'freeway_links_input_curve':freeway_links_input_curve,

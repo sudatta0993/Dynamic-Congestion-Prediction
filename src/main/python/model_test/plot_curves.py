@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
 MINS_PER_DAY = 1440
 
@@ -10,11 +11,13 @@ def plot_io_curves(io_series, filepath, min_intervals):
         plt.plot(indices, output_series)
     plt.ylabel('Cumulative number of vehicles')
     plt.xlabel('Time from midnight (mins)')
+    if not os.path.exists(os.path.dirname(filepath)):
+        os.makedirs(os.path.dirname(filepath))
     plt.savefig(filepath)
     plt.close()
 
-def plot_demand_congestion(demands, congestion, filepath, congestion_spillover = None, min_intervals = 5):
-    indices = np.arange(0, MINS_PER_DAY - min_intervals, min_intervals)
+def plot_demand_congestion(demands, congestion, filepath, congestion_spillover = None, min_intervals = 5, num_bins = 288):
+    indices = np.arange(0, num_bins*min_intervals - min_intervals, min_intervals)
     fig, ax1 = plt.subplots()
     ax2 = ax1.twinx()
     if congestion_spillover is not None:
@@ -30,5 +33,7 @@ def plot_demand_congestion(demands, congestion, filepath, congestion_spillover =
         ax1.set_ylabel('Demand (num/min)')
     ax1.set_xlabel('Time from midnight (mins)')
     ax2.set_ylabel('Congestion (accumulation/output) (min)', color='b')
+    if not os.path.exists(os.path.dirname(filepath)):
+        os.makedirs(os.path.dirname(filepath))
     plt.savefig(filepath)
     plt.close()

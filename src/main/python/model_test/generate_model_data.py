@@ -8,8 +8,8 @@ np.random.seed(0)
 
 MINS_PER_DAY = 1440
 default_parameters = Parameters()
-slope_rho = 1
-start_time_rho = 1
+slope_rho = 0
+start_time_rho = 0
 slope_noise_std = 0.01
 start_time_noise_std = 30
 realistic_demand_start_times = [360,420,480]
@@ -34,6 +34,7 @@ def get_header(dict_return):
         header_row.append('Congestion Link to zone ' + str(i) + ' input count')
     for i in range(len(dict_return['congestion_links_output_curve_to_zone'].columns)):
         header_row.append('Congestion Link to zone ' + str(i) + ' output count')
+    header_row.append('Congestion marginal impact')
     return header_row
 
 def write_csv(filename, start_day, end_day, parameters, all_slopes, all_start_times,
@@ -74,6 +75,10 @@ def write_csv(filename, start_day, end_day, parameters, all_slopes, all_start_ti
                     row_data.append(dict_return['congestion_links_input_curve_to_zone'][k][j])
                 for k in range(len(dict_return['congestion_links_output_curve_to_zone'].columns)):
                     row_data.append(dict_return['congestion_links_output_curve_to_zone'][k][j])
+                try:
+                    row_data.append(dict_return['congestion_marginal_impact_values'][j / min_intervals])
+                except:
+                    row_data.append(dict_return['congestion_marginal_impact_values'][j / min_intervals - 2])
                 writer.writerow(row_data)
             if variable_slope:
                 parameters.demand_slopes = default_parameters.demand_slopes - np.random.rand(3) * slope_noise_std
@@ -104,9 +109,9 @@ if __name__ == '__main__':
     config_file_path = sys.argv[1]
     data_file_path = sys.argv[2]
 
-    ### DEPRECATED (simply set slope_rho = 1, slope_noise_std = 0.01)
+    ### DEPRECATED (simply set slope_rho = 0, slope_noise_std = 0.01)
     variable_slope = sys.argv[3] in ["True","true","T", "t"]
-    ### DEPRECATED (simply set start_time_rho = 1, start_time_noise_std = 30)
+    ### DEPRECATED (simply set start_time_rho = 0, start_time_noise_std = 30)
     variable_times = sys.argv[4] in ["True","true","T", "t"]
 
     realistic_demand = sys.argv[5] in ["True","true","T", "t"]
