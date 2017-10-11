@@ -1,7 +1,7 @@
 # Dynamic-Congestion-Prediction
-This code is the repository for implementing algorithms for real-time prediction of macroscopic congestion from network state variables using Deep Learning. The corresponding work is detailed in the following papers (in review):  
-* Sudatta Mohanty, Alexey Pozdnukhov, *Real-Time Macroscopic Congestion Prediction Using Deep Learning*, Transportation Research Part c, 2017  
-* Sudatta Mohanty, Alexey Pozdnukhov, *GCN-LSTM Framework For Real-Time Macroscopic Congestion Prediction*, Bay Area Machine Learning Symposium (BayLearn), 2017  
+This code is the repository for implementing algorithms for real-time prediction of macroscopic congestion from network state variables using Deep Learning. The corresponding work is detailed in the following papers:  
+* Sudatta Mohanty, Michael Cassidy, Alexey Pozdnukhov, *Real-Time Macroscopic Congestion Prediction Using Deep Learning*, Transportation Research Part c, 2017 (in preparation)  
+* Sudatta Mohanty, Alexey Pozdnukhov, *GCN-LSTM Framework For Real-Time Macroscopic Congestion Prediction*, Bay Area Machine Learning Symposium (BayLearn), 2017 (accepted) 
   
 There is implementation of Graph Convolutional Network (GCN) based on the opensource codebase corresponding to:  
 * Michaël Defferrard, Xavier Bresson, Pierre Vandergheynst, [Convolutional Neural Networks on Graphs with Fast Localized Spectral Filtering](https://arxiv.org/abs/1606.09375), Neural Information Processing Systems (NIPS), 2016.
