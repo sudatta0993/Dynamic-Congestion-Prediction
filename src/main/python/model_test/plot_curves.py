@@ -4,13 +4,19 @@ import os
 
 MINS_PER_DAY = 1440
 
-def plot_io_curves(io_series, filepath, min_intervals):
+def plot_io_curves(io_series, filepath, min_intervals,toll_series = None,implement_tolls=False):
     indices = np.arange(0, MINS_PER_DAY, min_intervals)
+    fig, ax1 = plt.subplots()
     for (input_series, output_series) in io_series:
-        plt.plot(indices, input_series)
-        plt.plot(indices, output_series)
-    plt.ylabel('Cumulative number of vehicles')
-    plt.xlabel('Time from midnight (mins)')
+        ax1.plot(indices, input_series,label='Before toll')
+        ax1.plot(indices, output_series,label='After toll')
+    if implement_tolls:
+        ax2 = ax1.twinx()
+        ax2.plot(indices, toll_series, '-r')
+        ax2.set_ylabel('Toll values ($)', color='r')
+        ax1.legend(loc=4)
+    ax1.set_ylabel('Cumulative number of vehicles')
+    ax1.set_xlabel('Time from midnight (mins)')
     if not os.path.exists(os.path.dirname(filepath)):
         os.makedirs(os.path.dirname(filepath))
     plt.savefig(filepath)

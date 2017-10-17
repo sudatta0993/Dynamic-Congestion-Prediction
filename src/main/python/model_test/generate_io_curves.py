@@ -27,7 +27,7 @@ def get_congestion_links_input_curve_after_toll(congestion_links_input_curve_fro
         max_toll = np.max(toll_curve_values)
         toll_span = np.count_nonzero(np.diff(toll_curve_values))
         demand_span = np.count_nonzero(np.diff(cum_arrival_curve_from_demand))
-        shift_ratio = (toll_span - demand_span)/float(demand_span)
+        shift_ratio = (toll_span - demand_span)/float(demand_span) if (toll_span - demand_span)/float(demand_span) > 0 else 1
         past_index = 0
         for j in range(0,stationary_point_index):
             earlyness = shift_ratio*float(max_toll/value_of_time_late[i] - toll_curve_values[j]/value_of_time_early[i])
@@ -52,7 +52,7 @@ def get_congestion_links_input_curve_after_toll(congestion_links_input_curve_fro
         congestion_links_input_curve_after_toll[i] = pd.Series(cum_arrival_curve_from_toll, index=np.arange(0, MINS_PER_DAY,min_intervals))
         if plot_cum_input_curves_toll:
             plot_io_curves([(congestion_links_input_curve_from_demand[i], congestion_links_input_curve_after_toll[i])],
-                           file_directory+'/sample_plots/input_curve_toll_zone_'+str(i)+'.png',min_intervals)
+                           file_directory+'/sample_plots/input_curve_toll_zone_'+str(i)+'.png',min_intervals,toll_curve_values, True)
     return congestion_links_input_curve_after_toll
 
 
