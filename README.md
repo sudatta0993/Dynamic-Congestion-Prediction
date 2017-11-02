@@ -131,6 +131,8 @@ Run `/src/main/python/graph_cnn_lstm.py` with following parameters:
 .json config parameters:  
 {  
   `"input_file_path"`: File path of file generated in Step 1,  
+  `"shortest_path_adjacency_graph_file_path"`: File path of graph adjacency/weight matrix using shortest path to determine weights,  
+  `"trajectory_clustering_adjacency_graph_file_path"`: File path of graph adjacency/weight matrix using trajectory to determine weights,    
   `"input_data_column_index_ranges"`: List of numbers of even size for input column indices(Each consecutive pair is considered a start and end column for inputs into the model. For example [1,3,5,7] implies that the input columns are 1,2,3,5,6,7),  
   `"output_column_index"`: Column index for target output variable,  
   `"n_days"`: Total number of days of data for running model,  
@@ -154,7 +156,8 @@ Run `/src/main/python/graph_cnn_lstm.py` with following parameters:
   `"cnn_poly_order"`: List of polynomial orders (filter sizes) for each layer of GCN,  
   `"cnn_pool_size"`: List of pooling size (1 for no pooling and power of 2 to make graph coarser),  
   `"cnn_output_dim"`: Number of features per sample for GCN,  
-  `"attention_display_step"`:Number of iterations after which attention is displayed (for all consecutive iterations)  
+  `"attention_display_step"`:Number of iterations after which attention is displayed (for all consecutive iterations),  
+  `"graph_type"`: Type of graph used (knn / shortest_path / trajectory_clustering)   
 }   
   
 Output includes:
