@@ -3,6 +3,7 @@ import sys
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import scipy.sparse
 
 from graph_cnn_lib import coarsening, graph, models
 
@@ -23,14 +24,38 @@ def get_train_val_data(data,input_col_index_ranges,output_column_index,n_days):
     return X_train, y_train, d
 
 
-def get_cnn_graph_input(X_train, d):
-    dist, idx = graph.distance_scipy_spatial(X_train.T, k=2, metric='euclidean')
-    A = graph.adjacency(dist, idx).astype(np.float32)
+def get_cnn_graph_input(X_train, d, graph_type, sp_adjacency_graph_file_path, tc_adjacency_graph_file_path):
+    if graph_type == 'knn':
+        dist, idx = graph.distance_scipy_spatial(X_train.T, k=2, metric='euclidean')
+        A = graph.adjacency(dist, idx).astype(np.float32)
+    else:
+        if graph_type == 'shortest_path':
+            W = np.loadtxt(sp_adjacency_graph_file_path, delimiter=',')
+            A = scipy.sparse.csr_matrix((d, d))
+            for i in range(d):
+                for j in range(d):
+                    A[i,j] = W[i,j]
+        elif graph_type == 'trajectory_clustering':
+            k = 1
+            W = np.loadtxt(tc_adjacency_graph_file_path, delimiter=',')
+            # Remove irrelevant nodes
+            D = W.copy()
+            np.fill_diagonal(D,100.0)
+            D = D[~np.all(D == 100.0,axis=0)]
+            D = D[:,~np.all(D == 100.0, axis=1)]
+            np.fill_diagonal(D, 0.0)
+            d = len(D)
+            idx = np.argsort(D)[:,1:(k+1)]
+            D.sort()
+            D = D[:, 1:(k+1)]
+            A = graph.adjacency(D,idx)
+        else:
+            raise ValueError('Unsupported graph type')
     assert A.shape == (d, d)
     print('d = |V| = {}, k|V| < |E| = {}'.format(d, A.nnz))
     plt.spy(A, markersize=2, color='black')
     plt.show()
-    graphs, perm = coarsening.coarsen(A, levels=2, self_connections=False)
+    graphs, perm = coarsening.coarsen(A, levels=3, self_connections=False)
     print "X train initial size"
     print "n = " + str(len(X_train)) + ", d = " + str(len(X_train[0]))
     X_train = coarsening.perm_data(X_train, perm)
@@ -50,6 +75,8 @@ if __name__ == '__main__':
 
         # Data
         input_file_path = dict.get('input_file_path')
+        sp_adjacency_graph_file_path = dict.get('shortest_path_adjacency_graph_file_path')
+        tc_adjacency_graph_file_path = dict.get('trajectory_clustering_adjacency_graph_file_path')
         data = pd.read_csv(input_file_path)
         input_data_column_index_ranges = dict.get('input_data_column_index_ranges')
         output_column_index = dict.get('output_column_index')
@@ -66,6 +93,7 @@ if __name__ == '__main__':
         momentum = dict.get('momentum')
         decay_steps = n_days / batch_size
         attention_eval_frequency = dict.get('attention_display_step')
+        graph_type = dict.get('graph_type')
 
         # LSTM Network Parameters
         lstm_n_hidden = dict.get('lstm_n_hidden')
@@ -84,7 +112,8 @@ if __name__ == '__main__':
 
     X_train, y_train, d = get_train_val_data(data, input_data_column_index_ranges,
                                             output_column_index,n_days)
-    L, X_train = get_cnn_graph_input(X_train, d)
+    L, X_train = get_cnn_graph_input(X_train, d,graph_type, sp_adjacency_graph_file_path,
+                                     tc_adjacency_graph_file_path)
 
     model = models.cnn_lstm(L, cnn_num_conv_filters, cnn_poly_order,
                             cnn_pool_size, cnn_output_dim, cnn_filter,

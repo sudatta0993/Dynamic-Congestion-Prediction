@@ -1,0 +1,7 @@
+{
+  "trajectories_file_path":"./scenario_4/typical_day_input_data_h_w_100_K_1/extracted_routes.csv",
+  "sp_adjacency_file_path":"./shortest_path_adjacency.csv",
+  "n_trips": 565000,
+  "n_clusters": 1000,
+  "output_file_path": "./trajectory_clustering_adjacency.csv"
+}

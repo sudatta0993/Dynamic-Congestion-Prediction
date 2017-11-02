@@ -1,6 +1,8 @@
 {
-  "input_file_path": "./bay_area_simplified_freeway_network/scenario_4/lstm_input_data.csv",
-  "input_data_column_index_ranges": [55,216],
+  "input_file_path": "./bay_area_simplified_freeway_network/scenario_3/lstm_input_data.csv",
+  "shortest_path_adjacency_graph_file_path":"./bay_area_simplified_freeway_network/shortest_path_adjacency.csv",
+  "trajectory_clustering_adjacency_graph_file_path":"./bay_area_simplified_freeway_network/trajectory_clustering_adjacency.csv",
+  "input_data_column_index_ranges": [55,108],
   "train_perc": 0.99,
   "output_column_index": -1,
   "n_days": 1000,
@@ -23,5 +25,6 @@
   "cnn_poly_order":[20, 20],
   "cnn_pool_size":[1, 1],
   "cnn_output_dim":[512, 1],
-  "attention_display_step":1000
+  "attention_display_step":1000,
+  "graph_type":"trajectory_clustering"
 }

@@ -1,0 +1,5 @@
+{
+  "node_file_path": "./shapefiles/Simplified_network_nodes.shp",
+  "edge_file_path": "./shapefiles/Simplified_network_counts.shp",
+  "output_file_path": "./shortest_path_adjacency.csv"
+}
