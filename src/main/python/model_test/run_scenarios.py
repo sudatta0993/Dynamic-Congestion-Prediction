@@ -1,12 +1,12 @@
 from generate_demand import generate_initial_demand
 from generate_io_curves import get_links_output_curve, get_congestion_links_input_curve_after_merging,\
     get_congestion_links_input_curve_from_demand, get_freeway_links_input_curve_after_diverging, \
-    get_congestion_links_input_curve_after_toll
+    get_congestion_links_input_curve_after_toll, get_total_toll_collected
 from route_choice import check_route_choice
 from queue_spillover import check_queue_spillover
 from calculate_link_demand_and_congestion import get_link_congestion, \
     get_link_demand, get_congestion_marginal_impact, get_cumulative_congestion_value
-from plot_curves import plot_io_curves, plot_demand_congestion
+from plot_curves import plot_io_curves, plot_demand_congestion, plot_fundamental_diagrams
 import numpy as np
 import os
 
@@ -26,16 +26,16 @@ class Parameters():
         self.demand_start_times = dict.get('demand_start_times',[0, 480, 960])
         self.demand_end_times = dict.get('demand_end_times',[240, 720, 1200])
         self.demand_slopes = dict.get('demand_slopes',[0.1,0.1,0.1])
-        self.congestion_links_capacity = dict.get('congestion_links_capacity',[10,10,10,5])
+        self.congestion_links_capacity = dict.get('congestion_links_capacity',[12,12,12,5])
         self.threshold_output_for_congestion = dict.get('threshold_output_for_congestion',[1,1,1,1])
         self.threshold_beta_for_congestion_impact = dict.get('threshold_output_for_congestion_impact',[0.01,0.01,0.01,0.01])
         self.congestion_links_fftt = dict.get('congestion_links_fftt',[20,20,20,20])
         self.congestion_links_jam_density = dict.get('congestion_links_jam_density',[100,100,100,100])
-        self.congestion_links_length = dict.get('congestion_links_length',[100,100,100,100])
+        self.congestion_links_length = dict.get('congestion_links_length',[5,5,5,5])
         self.freeway_links_capacity = dict.get('freeway_links_capacity',[20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20,20, 20, 20, 20])
         self.freeway_links_fftt = dict.get('freeway_links_fftt',[100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100])
         self.freeway_links_jam_density = dict.get('freeway_links_jam_density',[100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100])
-        self.freeway_links_length = dict.get('freeway_links_length',[100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100])
+        self.freeway_links_length = dict.get('freeway_links_length',[25,25,25,25,25,25,25,25,25,25,25,25,25,25,25,25])
         self.congestion_nn_smoothening_number = dict.get('congestion_nn_smoothening_number',[10,10,10,10])
         self.congestion_marginal_impact_nn_smoothening_number = dict.get('congestion_marginal_impact_nn_smoothening_number',[10,10,10,10])
         self.check_route_choice = dict.get('check_route_choice',False)
@@ -53,9 +53,10 @@ class Parameters():
         self.implement_toll = dict.get('implement_toll',False)
         self.toll_curves = dict.get('toll_curves',[lambda x: 0,lambda x: 0,lambda x: 0])
         self.plot_cum_input_curves_toll = dict.get('plot_cum_input_curves_toll',False)
-        self.demand_nn_smoothening_number = dict.get('demand_nn_smoothening_number',[20,20,20])
+        self.demand_nn_smoothening_number = dict.get('demand_nn_smoothening_number',[8,8,8])
 
 def run(parameters):
+    plot_fundamental_diagrams(parameters=parameters)
     od_demand_funcs = generate_initial_demand(num_zones=parameters.num_zones, start_times=parameters.demand_start_times,
                                               end_times=parameters.demand_end_times, slopes=parameters.demand_slopes)
     congestion_links_input_curve_from_zone = get_congestion_links_input_curve_from_demand(num_zones=parameters.num_zones,
@@ -170,6 +171,9 @@ def run(parameters):
                                     num_bins=parameters.num_bins, implement_tolls=parameters.implement_toll,
                                     demand_nn_smoothening_number=parameters.demand_nn_smoothening_number[i])
                     for i in range(parameters.num_zones - 1)]
+    if parameters.implement_toll:
+        total_toll_collected = get_total_toll_collected(link_demands,parameters.toll_curves,
+                                                        parameters.num_zones, parameters.min_intervals)
     congestion_marginal_impacts = get_congestion_marginal_impact(link_input_curve=congestion_links_input_curve_to_zone[parameters.num_zones - 1],
                                                                  link_output_curve=congestion_links_output_curve_to_zone[parameters.num_zones - 1],
                                                                  congestion_values=congestion_values,
@@ -212,4 +216,6 @@ def run(parameters):
                        'cum_congestion': cum_congestion}
         if parameters.check_queue_spillover:
             dict_return['congestion_spillover'] = congestion_spillover
+        if parameters.implement_toll:
+            dict_return['total_toll_collected'] = total_toll_collected
         return dict_return

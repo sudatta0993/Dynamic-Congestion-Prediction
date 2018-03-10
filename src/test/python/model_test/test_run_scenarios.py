@@ -76,10 +76,11 @@ class test_run_scenarios(unittest.TestCase):
         parameters.check_queue_spillover = True
         parameters.congestion_links_jam_density = [100, 100, 100, 25]
         parameters.congestion_links_length = [100, 100, 100, 10]
-        parameters.freeway_links_jam_density = [100, 100, 100, 25, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100,
+        parameters.freeway_links_jam_density = [100, 100, 100, 30, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100,
                                                 100, 100]
         parameters.freeway_links_length = [100, 100, 100, 10, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100,
                                            100]
+        parameters.freeway_links_fftt = [100,100,100,5,100,100,100,100,100,100,100,100,100,100,100,100]
         parameters.file_directory = './scenario_6'
         run(parameters=parameters)
 

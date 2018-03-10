@@ -15,6 +15,7 @@ class test_run_scenarios(unittest.TestCase):
         dict = run(parameters)
         cum_congestion = dict['cum_congestion']
         print "Cumulative congestion value for No Toll = " + str(cum_congestion)
+        print "Total toll collected for No Toll = " + str(0)
 
 
     def test_scenario_optimal_toll(self):
@@ -32,7 +33,9 @@ class test_run_scenarios(unittest.TestCase):
         parameters.plot_cum_input_curves_toll = True
         dict = run(parameters)
         cum_congestion = dict['cum_congestion']
+        total_toll_collected = dict['total_toll_collected']
         print "Cumulative congestion value for Optimal Toll = " + str(cum_congestion)
+        print "Total toll collected for Optimal Toll = " + str(sum(total_toll_collected))
 
 
     def test_scenario_average_toll(self):
@@ -51,7 +54,9 @@ class test_run_scenarios(unittest.TestCase):
                                   lambda x: 0 if x < 720 else (x - 720) / 2.0 if x < 1200 else 240]
         dict = run(parameters)
         cum_congestion = dict['cum_congestion']
+        total_toll_collected = dict['total_toll_collected']
         print "Cumulative congestion value for Average Toll = " + str(cum_congestion)
+        print "Total toll collected for Average Toll = " + str(sum(total_toll_collected))
 
 
     def test_scenario_model_toll(self):
@@ -85,7 +90,9 @@ class test_run_scenarios(unittest.TestCase):
                                   lambda x: toll_values[int(x / 5), 2] + toll_values[int(x / 5), 5]]
         dict = run(parameters)
         cum_congestion = dict['cum_congestion']
+        total_toll_collected = dict['total_toll_collected']
         print "Cumulative congestion value for Model-based Toll = " + str(cum_congestion)
+        print "Total toll collected for Model-based Toll = " + str(sum(total_toll_collected))
 
 
     def test_scenario_nn_toll(self):
@@ -108,4 +115,6 @@ class test_run_scenarios(unittest.TestCase):
         parameters.plot_cum_input_curves_toll = True
         dict = run(parameters)
         cum_congestion = dict['cum_congestion']
+        total_toll_collected = dict['total_toll_collected']
         print "Cumulative congestion value for 1NN-based Toll = " + str(cum_congestion)
+        print "Total toll collected for 1NN-based Toll = " + str(sum(total_toll_collected))

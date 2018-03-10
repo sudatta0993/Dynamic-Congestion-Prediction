@@ -55,6 +55,13 @@ def get_congestion_links_input_curve_after_toll(congestion_links_input_curve_fro
                            file_directory+'/sample_plots/input_curve_toll_zone_'+str(i)+'.png',min_intervals,toll_curve_values, True)
     return congestion_links_input_curve_after_toll
 
+def get_total_toll_collected(link_demands,toll_curves, num_zones, min_intervals):
+    total_toll_collected = np.zeros(num_zones)
+    for i in range(num_zones - 1):
+        toll_curve_values = [toll_curves[i](j) for j in np.arange(0, MINS_PER_DAY, min_intervals)]
+        total_toll_collected[i] = sum(i * j for (i, j) in zip(link_demands[i], toll_curve_values))
+    return total_toll_collected
+
 
 def get_freeway_links_input_curve_after_diverging(congestion_links_output_curve, num_zones,min_intervals, num_bins):
     freeway_links_input_curve = pd.DataFrame()

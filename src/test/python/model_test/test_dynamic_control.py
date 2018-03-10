@@ -31,15 +31,20 @@ class test_run_scenarios(unittest.TestCase):
 
     def test_scenario_8(self):
         parameters = Parameters()
-        parameters.num_bins = 1440
-        parameters.min_intervals = 1
         parameters.plot_cum_input_curves_toll = True
         parameters.implement_toll = True
         parameters.file_directory = './scenario_8'
         parameters.get_curves_data = True
-        parameters.toll_curves = [lambda x: 240 - x*0.5 if x < 480 else 0,
-                                  lambda x: 0 if x < 360 else (x - 360)/2.0 if x < 600 else 120 - (x - 600)/2.0 if x < 840 else 0,
-                                  lambda x: 0 if x < 720 else (x - 720)/2.0 if x < 1200 else 240]
+        # Toll curve for Maximum Spread Out + Minimum Overlap
+        parameters.toll_curves = [lambda x: 240 - x * 0.5 if x < 480 else 0,
+                                  lambda x: 0 if x < 360 else (x - 360) / 2.0 if x < 600 else 120 - (x - 600) / 2.0 if x < 840 else 0,
+                                  lambda x: 0 if x < 720 else (x - 720) / 2.0 if x < 1200 else 240]
+        # Toll curve for Maximum Spread Out
+        #parameters.toll_curves = [lambda x: 28.8*25 - x*0.5,
+        #                          lambda x: 5.76*25 + x*0.5 if x < 576 else 17.28*25 - (x - 576)*0.5,
+        #                          lambda x: 0.5*x if x < 1152 else 23.04*25 - (x - 1152)*0.5]
         dict = run(parameters)
         cum_congestion = dict['cum_congestion']
+        total_toll_collected = dict['total_toll_collected']
         print "Cumulative congestion value for Scenario 8 (With Toll) = " + str(cum_congestion)
+        print "Total toll collected = " + str(sum(total_toll_collected))
